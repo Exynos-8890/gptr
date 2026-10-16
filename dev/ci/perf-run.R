@@ -14,7 +14,9 @@ if (mode == "check") {
 } else {
   # A parent-only connection assertion would miss worker leaks; these lanes stay serial.
   Sys.setenv(TESTTHAT_PARALLEL = "false")
-  if (variant == "optimized") {
+  # Both arms need the same installed-package-dependent tests admitted. The
+  # baseline still loads source with devtools; only the candidate tests installed.
+  if (variant %in% c("baseline", "optimized")) {
     lib = file.path(tempdir(), "perf-library")
     dir.create(lib)
     install = processx::run(file.path(R.home("bin"), "R"),

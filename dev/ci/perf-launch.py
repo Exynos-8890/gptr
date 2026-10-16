@@ -65,7 +65,8 @@ def main():
     os.environ["GPTR_PERF_PYTHON"] = sys.executable
     os.environ["GPTR_PERF_LAUNCHER"] = str(Path(__file__).resolve())
     os.environ["TESTTHAT_PARALLEL"] = str(
-        os.environ.get("GPTR_CI_PERF_VARIANT") == "optimized" and cpus is not None).lower()
+        os.environ.get("GPTR_CI_PERF_VARIANT") == "optimized"
+        and sys.platform.startswith("linux") and cpus is not None).lower()
     started = time.monotonic()
     result = subprocess.run(sys.argv[1:], check=False)
     output = Path("perf-evidence")

@@ -33,7 +33,8 @@ path = "tests/testthat/setup.R"
 lines = readLines(path, encoding = "UTF-8")
 hit = grep('    OMP_THREAD_LIMIT = "2",', lines, fixed = TRUE)
 stopifnot(length(hit) == 1L)
-lines[[hit]] = '    OMP_THREAD_LIMIT = "1",'
+# Keep the repository's asserted setup contract. The inherited CPU affinity,
+# not a different value of this variable, bounds the complete process tree.
 probe = c("", "if (nzchar(Sys.getenv(\"GPTR_PERF_LAUNCHER\"))) {",
   "  status = system2(Sys.getenv(\"GPTR_PERF_PYTHON\"),",
   "    c(shQuote(Sys.getenv(\"GPTR_PERF_LAUNCHER\")), \"--verify-parent\"))",
