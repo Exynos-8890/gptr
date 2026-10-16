@@ -1,8 +1,6 @@
 name: CI performance A-B (CRAN checks retained)
 'on':
-  push:
-    branches:
-      - ci/perf-cran-20261016
+  workflow_dispatch: {}
 permissions:
   contents: read
 concurrency:

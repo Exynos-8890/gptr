@@ -2,7 +2,7 @@ name: Clean tarball performance verification
 'on':
   push:
     branches:
-      - ci/perf-cran-clean-20261016
+      - ci/perf-cran-20261016
 permissions:
   contents: read
 concurrency:
