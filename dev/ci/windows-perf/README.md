@@ -92,3 +92,20 @@ No-extra-Rtools warm sample passed: 18s R setup, 46.14s source install, 46.37s t
 42 passes, 0 failures/warnings/skips. Standard Rtools arm still running. Before adopting
 this option, verify cold dependency setup and a full check, not just warm installation.
 Cold probe: https://github.com/Exynos-8890/gptr/actions/runs/39002216479 at `58dc301`.
+
+Completed comparisons: both versions' first-round shard unions match all 190 ordinary
+files, 31766 passes / 107 skips / no failures or warnings. The full run is still rejected
+because of native observer failures. Native2 oldrel also failed two background-shell
+timing assertions, so file workers are not the production choice.
+
+First Rtools default arm failed before tests in Rtools42 Bash (`object 'testthat' not
+found` for an Rscript expression); corrected probe uses PowerShell for that expression.
+Corrected A/B `39002386734` at `26d6a38`: both pass the same 42 assertions. R setup
+170s -> 20s; whole jobs 6m07s -> 3m56s. Cold no-extra-Rtools probe also passed all 42.
+
+Clean candidate: branch `perf/windows-ci`, commit `c07fcf4`, separate worktree
+`/private/tmp/gptr-windows-ci.PVo7GN/production`. Local gate regressions: 45 pass;
+native bodies and warning handlers are AST-identical to main, runtime R/ unchanged.
+Validation-only commit `77e3a14` differs solely by a caller workflow, invokes the exact
+production workflow and the unchanged serial Linux CRAN-mode job. Run:
+https://github.com/Exynos-8890/gptr/actions/runs/39002733279 (live; no time-target claim yet).
