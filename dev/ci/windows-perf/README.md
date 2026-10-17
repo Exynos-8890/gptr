@@ -29,7 +29,10 @@ at `8a3b59c` (complete). Serial and shard-union signatures match exactly:
 148.99s. Parallel2 took 272.63s but failed one unchanged HTTP timing assertion;
 it is rejected, not counted as a speedup. Different hosted runners add measurement noise.
 Full original checks: https://github.com/Exynos-8890/gptr/actions/runs/39000168147
-at `b9d95a4` (running, release and oldrel-4). No package test entry or assertion changes;
+at `b9d95a4`. Release passed in 31m54s (31766 ordinary + 1906 native passes,
+107 + 1 skips, Status OK); oldrel-4 remained live past 30m. Thus two workers alone
+miss the time target even though release preserves the original assertion counts.
+No package test entry or assertion changes;
 the standard check action, native fresh entries, warning/status gates are retained.
 The full probe uses two testthat file workers and one math thread on normal Windows
 runner allocation, like main's Linux parallel gate; unlike the sample it does not impose
@@ -39,7 +42,7 @@ Isolated worktree: `/private/tmp/gptr-windows-ci.PVo7GN/repo`, branch
 `perf/windows-ci-experiments`; user main worktree and notes remain untouched.
 Native/full target is unproven until both complete Windows versions pass below 30m.
 
-Next probe: four serial R CMD check jobs per Windows R version. Each retains all ten
+Round 1 probe: four serial R CMD check jobs per Windows R version. Each retains all ten
 original native fresh-process entries and checks one disjoint quarter of the 190 ordinary
 files. The union covers all 200 files; CRAN/default entry paths never opt into sharding.
 Selection/config regressions: 15 pass (partition, default, ordering, malformed selectors
@@ -78,3 +81,14 @@ and 12 audit regression assertions pass). No observer deadline or guard is chang
 Rtools A/B: https://github.com/Exynos-8890/gptr/actions/runs/39001842418
 at `776e622` (running). Both oldrel jobs run the same source-install regression file;
 only setup-r's extra Rtools installation differs. No production Rtools change yet.
+
+Round 2 full run: https://github.com/Exynos-8890/gptr/actions/runs/39002125559
+at `bb38895` (running; all eight jobs started). Native cases run only in group1;
+other groups' native entry processes are empty by explicit CI partition, not CRAN skip.
+The audit verifies real native pass output in group1 and no duplicated native execution
+elsewhere. Ordinary + native coverage must still equal all 200 files.
+
+No-extra-Rtools warm sample passed: 18s R setup, 46.14s source install, 46.37s tests,
+42 passes, 0 failures/warnings/skips. Standard Rtools arm still running. Before adopting
+this option, verify cold dependency setup and a full check, not just warm installation.
+Cold probe: https://github.com/Exynos-8890/gptr/actions/runs/39002216479 at `58dc301`.
