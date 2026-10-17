@@ -42,6 +42,21 @@ Native/full target is unproven until both complete Windows versions pass below 3
 Next probe: four serial R CMD check jobs per Windows R version. Each retains all ten
 original native fresh-process entries and checks one disjoint quarter of the 190 ordinary
 files. The union covers all 200 files; CRAN/default entry paths never opt into sharding.
-Selection regressions: 13 pass (partition, default, ordering and malformed selectors).
+Selection/config regressions: 15 pass (partition, default, ordering, malformed selectors
+and valid Actions context scope).
 Successful entries retain scalar assertion results and observed file inventories for a
 cross-job coverage audit. No test body, timeout or assertion is relaxed.
+
+Serial-shard run: https://github.com/Exynos-8890/gptr/actions/runs/39001048332
+at `3004305` (running; all eight Windows jobs admitted). The preceding `39000992551`
+failed workflow validation before starting jobs; runner.temp belongs in step env, not
+job env. Regression added before fixing it. Result audit regressions: 10 pass; missing,
+duplicate, foreign-source, failing and empty-native outputs are rejected.
+
+Audit completed artifacts with:
+`Rscript --vanilla dev/ci/windows-perf/audit-shards.R ARTIFACT_ROOT SOURCE_SHA`.
+Original successful `38993976551` outputs have 31766 ordinary passes / 107 skips and
+1906 native passes / 1 skip on each Windows R version. Compare counts as well as inventory.
+Latest untouched main oldrel-4 run `38997490469` failed in its disk-observer fixture
+(`observer-metadata-invalid`); that serial failure predates these experiments and is not
+evidence that sharding caused a regression. Failing jobs still invalidate an experiment.
