@@ -13,3 +13,11 @@ test_that("CI partitions run every ordinary file exactly once and reject bad sel
     expect_error(scope$ci_test_shard(files, id))
   }
 })
+
+test_that("shard jobs use all selectors and step-only runner context", {
+  workflow = yaml::read_yaml(testthat::test_path(
+    "../../../.github/workflows/windows-performance-shards.yaml"))
+  job = workflow$jobs$shards
+  expect_identical(unlist(job$strategy$matrix$shard), 1:4)
+  expect_false(any(grepl("runner[.]", unlist(job$env))))
+})

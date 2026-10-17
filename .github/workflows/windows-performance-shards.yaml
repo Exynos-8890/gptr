@@ -48,7 +48,6 @@ jobs:
       VECLIB_MAXIMUM_THREADS: '1'
       RCPP_PARALLEL_NUM_THREADS: '1'
       GPTR_CI_TEST_SHARD: ${{ matrix.shard }}/4
-      GPTR_CI_TEST_RESULTS: ${{ runner.temp }}/windows-shard-results.rds
     steps:
       - uses: actions/checkout@v6
       - uses: r-lib/actions/setup-pandoc@v2
@@ -148,6 +147,8 @@ jobs:
         run: Rscript --vanilla -e 'testthat::test_file("dev/ci/windows-perf/test-shard.R",
           stop_on_failure = TRUE)'
       - uses: r-lib/actions/check-r-package@v2
+        env:
+          GPTR_CI_TEST_RESULTS: ${{ runner.temp }}/windows-shard-results.rds
         with:
           upload-snapshots: true
           build_args: c("--no-manual", "--compact-vignettes=gs+qpdf")
