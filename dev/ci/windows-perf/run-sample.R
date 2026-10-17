@@ -2,6 +2,7 @@
 (function() {
   repo = normalizePath(".", winslash = "/")
   source("dev/ci/windows-perf/sample-plan.R", local = TRUE)
+  source("dev/ci/windows-perf/check-tree.R", local = TRUE)
   args = commandArgs(TRUE)
   stopifnot(length(args) == 1L)
   arm = args[[1L]]
@@ -34,6 +35,7 @@
   installed = proc.time()[["elapsed"]] - start
   stopifnot(install$status == 0L)
   tests = system.file("tests", package = "gptr", lib.loc = lib, mustWork = TRUE)
+  tests = test_tree(repo, tests, file.path(root, "check"))
   # Probe every testthat worker; do not alter any test body or expectation.
   probe = c("local({", "  status = system2(Sys.getenv('GPTR_WINDOWS_PERF_PYTHON'),",
     "    c('-I', '-B', shQuote(Sys.getenv('GPTR_WINDOWS_PERF_LAUNCHER')), '--verify-parent'))",

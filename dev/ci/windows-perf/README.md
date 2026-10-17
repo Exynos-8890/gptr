@@ -13,3 +13,12 @@ installs once into a private library, uses installed tests and inherits a two-CP
 All testthat workers verify CPU inheritance. Artifact tables retain assertion signatures,
 test-file inventories and install/test timing separately. A faster failing or incomplete
 arm is not an accepted optimization. These samples do not prove the full target.
+
+Sample run: https://github.com/Exynos-8890/gptr/actions/runs/38999509629
+at `cfc666c2cb215b18763fa1e3f89022ee8552d008` (complete; invalid packaging context).
+The installed-test directory made `test-aaa-state.R` mistake compiled R code for sources;
+serial, parallel and shard2 all failed the same two install assertions. Shard1 passed.
+The corrected round stages `tests/` beside `00_pkg_src/gptr/`, matching R CMD check,
+without changing any test body. Local partition/layout/comparison regressions: 12 pass.
+Latest main release run `38997490469` completed in 33m29s; runner variance means
+the paired sample, not a comparison with the slowest historic run, guides the next step.
