@@ -19,6 +19,14 @@ test_that("Rtools setup comparison keeps the same source-install regression file
   expect_identical(scope$sample_plan("install-no-rtools-cold"), "test-aaa-state.R")
 })
 
+test_that("Rtools setup probes keep Rscript expressions out of Rtools42 Bash", {
+  workflow = yaml::read_yaml(testthat::test_path(
+    "../../../.github/workflows/windows-performance-setup.yaml"))
+  steps = Filter(function(step) identical(step$name, "Verify sample partition"),
+    workflow$jobs$setup$steps)
+  expect_identical(steps[[1L]]$shell, "pwsh")
+})
+
 test_that("staged tests see original sources rather than the installed binary", {
   scope = new.env(parent = baseenv())
   sys.source(testthat::test_path("check-tree.R"), envir = scope)

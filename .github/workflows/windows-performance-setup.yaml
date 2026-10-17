@@ -1,9 +1,9 @@
-name: Windows oldrel Rtools setup experiment
+name: Windows oldrel Rtools setup corrected experiment
 'on':
   push:
     branches: perf/windows-ci-experiments
     paths:
-      - dev/ci/windows-perf/setup-trigger.txt
+      - .github/workflows/windows-performance-setup.yaml
 permissions:
   contents: read
 concurrency:
@@ -121,7 +121,7 @@ jobs:
           needs: check
           cache: always
       - name: Verify sample partition
-        shell: bash
+        shell: pwsh
         run: Rscript --vanilla -e 'testthat::test_file("dev/ci/windows-perf/test-sample.R",
           stop_on_failure = TRUE)'
       - name: Measure unchanged installed sample
