@@ -11,6 +11,13 @@ test_that("sample arms admit the same tests without overlap between shards", {
   expect_error(scope$sample_plan("unknown"), "Unknown sample arm", fixed = TRUE)
 })
 
+test_that("Rtools setup comparison keeps the same source-install regression file", {
+  scope = new.env(parent = baseenv())
+  sys.source(testthat::test_path("sample-plan.R"), envir = scope)
+  expect_identical(scope$sample_plan("install-default"), "test-aaa-state.R")
+  expect_identical(scope$sample_plan("install-no-rtools"), "test-aaa-state.R")
+})
+
 test_that("staged tests see original sources rather than the installed binary", {
   scope = new.env(parent = baseenv())
   sys.source(testthat::test_path("check-tree.R"), envir = scope)

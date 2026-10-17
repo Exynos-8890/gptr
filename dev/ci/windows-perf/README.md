@@ -60,3 +60,8 @@ Original successful `38993976551` outputs have 31766 ordinary passes / 107 skips
 Latest untouched main oldrel-4 run `38997490469` failed in its disk-observer fixture
 (`observer-metadata-invalid`); that serial failure predates these experiments and is not
 evidence that sharding caused a regression. Failing jobs still invalidate an experiment.
+
+Upstream active ruleset `24955100` requires `windows-latest (release)` and
+`windows-latest (oldrel-4)`. A production shard rollout must preserve those contexts as
+aggregate gates, requiring every shard and its coverage audit; renaming or satisfying
+them with just one quarter would weaken protection. Do not edit the ruleset.

@@ -5,6 +5,8 @@ sample_plan = function(arm) {
     c("doc-io", "session-store", "aaa-state", "http-reactor")
   )
   names = switch(arm, serial = , parallel2 = unlist(groups, use.names = FALSE),
-    shard1 = groups[[1L]], shard2 = groups[[2L]], stop("Unknown sample arm: ", arm))
+    shard1 = groups[[1L]], shard2 = groups[[2L]],
+    `install-default` = , `install-no-rtools` = "aaa-state",
+    stop("Unknown sample arm: ", arm))
   sort(paste0("test-", names, ".R"))
 }
