@@ -3,6 +3,14 @@ name: Windows CI experiments
   push:
     branches:
       - perf/windows-ci-experiments
+    paths:
+      - dev/ci/windows-perf/run-sample.R
+      - dev/ci/windows-perf/sample-plan.R
+      - dev/ci/windows-perf/check-tree.R
+      - dev/ci/windows-perf/limit-cpus.py
+      - R/**
+      - tests/**
+      - DESCRIPTION
 permissions:
   contents: read
 concurrency:
