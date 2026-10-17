@@ -4,10 +4,7 @@ name: Windows full CI experiment
     branches:
       - perf/windows-ci-experiments
     paths:
-      - .github/workflows/windows-performance-full.yaml
-      - R/**
-      - tests/**
-      - DESCRIPTION
+      - dev/ci/windows-perf/native2-trigger.txt
 permissions:
   contents: read
 concurrency:

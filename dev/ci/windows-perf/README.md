@@ -22,3 +22,26 @@ The corrected round stages `tests/` beside `00_pkg_src/gptr/`, matching R CMD ch
 without changing any test body. Local partition/layout/comparison regressions: 12 pass.
 Latest main release run `38997490469` completed in 33m29s; runner variance means
 the paired sample, not a comparison with the slowest historic run, guides the next step.
+
+Corrected sample: https://github.com/Exynos-8890/gptr/actions/runs/39000057544
+at `8a3b59c` (complete). Serial and shard-union signatures match exactly:
+2773 pass, 0 failures, 16 skips. Test times: serial 305.18s; shards 173.23s and
+148.99s. Parallel2 took 272.63s but failed one unchanged HTTP timing assertion;
+it is rejected, not counted as a speedup. Different hosted runners add measurement noise.
+Full original checks: https://github.com/Exynos-8890/gptr/actions/runs/39000168147
+at `b9d95a4` (running, release and oldrel-4). No package test entry or assertion changes;
+the standard check action, native fresh entries, warning/status gates are retained.
+The full probe uses two testthat file workers and one math thread on normal Windows
+runner allocation, like main's Linux parallel gate; unlike the sample it does not impose
+an OS-wide affinity ceiling. The real serial CRAN-mode job remains unchanged on main.
+
+Isolated worktree: `/private/tmp/gptr-windows-ci.PVo7GN/repo`, branch
+`perf/windows-ci-experiments`; user main worktree and notes remain untouched.
+Native/full target is unproven until both complete Windows versions pass below 30m.
+
+Next probe: four serial R CMD check jobs per Windows R version. Each retains all ten
+original native fresh-process entries and checks one disjoint quarter of the 190 ordinary
+files. The union covers all 200 files; CRAN/default entry paths never opt into sharding.
+Selection regressions: 13 pass (partition, default, ordering and malformed selectors).
+Successful entries retain scalar assertion results and observed file inventories for a
+cross-job coverage audit. No test body, timeout or assertion is relaxed.
