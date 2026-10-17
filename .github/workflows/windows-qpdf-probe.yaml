@@ -27,6 +27,6 @@ jobs:
           grDevices::pdf(path)
           graphics::plot(seq_len(100L))
           grDevices::dev.off()
-          tools::compactPDF(path, verbose = TRUE)
+          tools::compactPDF(path)
           status = system2(qpdf, c("--check", shQuote(path)))
           stopifnot(identical(status, 0L), file.info(path)$size > 0)
