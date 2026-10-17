@@ -30,9 +30,11 @@ if (.Platform$OS.type == "windows" && identical(Sys.getenv("NOT_CRAN"), "true"))
       table = as.data.frame(result)
       stopifnot(setequal(unique(table$file), selected))
       table = table[, !vapply(table, is.list, logical(1)), drop = FALSE]
+      native_selected = if (ci_native_shard(selector)) native else character()
       out = Sys.getenv("GPTR_CI_TEST_RESULTS")
       if (nzchar(out)) saveRDS(list(selector = selector, files = files, native = native,
-        selected = selected, results = table, sha = Sys.getenv("GITHUB_SHA")), out)
+        native_selected = native_selected, selected = selected, results = table,
+        sha = Sys.getenv("GITHUB_SHA")), out)
     }
   })
 } else {

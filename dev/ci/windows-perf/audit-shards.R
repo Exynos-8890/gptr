@@ -6,7 +6,9 @@ audit_shards = function(manifests, files, native, sha) {
   selected = unlist(lapply(manifests, function(x) x$selected), use.names = FALSE)
   stopifnot(!anyDuplicated(selected), setequal(selected, setdiff(files, native)))
   for (x in manifests) {
+    expected_native = if (identical(x$selector, paste0("1/", count))) native else character()
     stopifnot(identical(x$sha, sha), setequal(x$files, files), setequal(x$native, native),
+      is.character(x$native_selected), setequal(x$native_selected, expected_native),
       nrow(x$results) > 0L, setequal(unique(x$results$file), x$selected),
       all(x$results$failed == 0L), !any(x$results$error), all(x$results$warning == 0L))
   }
@@ -34,17 +36,25 @@ if (sys.nframe() == 0L) {
   }, character(1))
   for (version in c("release", "oldrel-4")) {
     root = file.path(args[[1L]], paste0("windows-shard-", version, "-", 1:4))
-    paths = unlist(lapply(root, list.files, pattern = "^windows-shard-results[.]rds$",
-      recursive = TRUE, full.names = TRUE), use.names = FALSE)
-    stopifnot(length(paths) == 4L)
+    paths = lapply(root, list.files, pattern = "^windows-shard-results[.]rds$",
+      recursive = TRUE, full.names = TRUE)
+    stopifnot(all(lengths(paths) == 1L))
+    paths = unlist(paths, use.names = FALSE)
     result = audit_shards(lapply(paths, readRDS), files, unname(native), args[[2L]])
-    for (directory in root) {
+    for (i in seq_along(root)) {
+      directory = root[[i]]
+      own = readRDS(paths[[i]])
       for (entry in entries) {
         name = sub("[.]R$", ".Rout", basename(entry))
         output = list.files(directory, recursive = TRUE, full.names = TRUE)
         output = output[basename(output) == name]
         stopifnot(length(output) == 1L)
-        native_summary(readLines(output, encoding = "UTF-8"))
+        lines = readLines(output, encoding = "UTF-8")
+        if (length(own$native_selected)) {
+          native_summary(lines)
+        } else {
+          stopifnot(!any(grepl("^\\[ FAIL ", lines)))
+        }
       }
       log = list.files(directory, pattern = "^00check[.]log$", recursive = TRUE,
                        full.names = TRUE)

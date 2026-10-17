@@ -1,4 +1,4 @@
-name: Windows full serial-shard experiment
+name: Windows full serial-shard once experiment
 'on':
   push:
     branches:
@@ -7,6 +7,7 @@ name: Windows full serial-shard experiment
       - .github/workflows/windows-performance-shards.yaml
       - tests/testthat.R
       - tests/testthat/helper-ci-shard.R
+      - tests/native-*.R
 permissions:
   contents: read
 concurrency:

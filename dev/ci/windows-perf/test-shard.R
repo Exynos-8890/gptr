@@ -14,6 +14,16 @@ test_that("CI partitions run every ordinary file exactly once and reject bad sel
   }
 })
 
+test_that("native fixtures keep fresh entries but run only once across the CI shards", {
+  scope = new.env(parent = baseenv())
+  sys.source(testthat::test_path("../../../tests/testthat/helper-ci-shard.R"), envir = scope)
+  expect_true(scope$ci_native_shard(""))
+  expect_identical(vapply(paste0(1:4, "/4"), scope$ci_native_shard, logical(1),
+    USE.NAMES = FALSE),
+                   c(TRUE, FALSE, FALSE, FALSE))
+  expect_error(scope$ci_native_shard("0/4"))
+})
+
 test_that("shard jobs use all selectors and step-only runner context", {
   workflow = yaml::read_yaml(testthat::test_path(
     "../../../.github/workflows/windows-performance-shards.yaml"))

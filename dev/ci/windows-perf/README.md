@@ -65,3 +65,16 @@ Upstream active ruleset `24955100` requires `windows-latest (release)` and
 `windows-latest (oldrel-4)`. A production shard rollout must preserve those contexts as
 aggregate gates, requiring every shard and its coverage audit; renaming or satisfying
 them with just one quarter would weaken protection. Do not edit the ruleset.
+
+Round 1 shard release1/4 failed in the original native disk-observer 1s snapshot
+deadline; release4/4 also failed its observer, while oldrel1/4 passed in about 16m.
+Ordinary release1/4 passed all 7741 assertions / 38 skips. Native duplication adds
+unnecessary work and repeated opportunities for the pre-existing guard flake.
+Round 2 assigns all ten unchanged native bodies to shard1 only, still in ten fresh
+entry processes. Other groups retain their ordinary partitions. The aggregate audit
+requires every native output once and every ordinary file once (18 selection/config
+and 12 audit regression assertions pass). No observer deadline or guard is changed.
+
+Rtools A/B: https://github.com/Exynos-8890/gptr/actions/runs/39001842418
+at `776e622` (running). Both oldrel jobs run the same source-install regression file;
+only setup-r's extra Rtools installation differs. No production Rtools change yet.
