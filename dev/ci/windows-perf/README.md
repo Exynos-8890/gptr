@@ -109,3 +109,20 @@ native bodies and warning handlers are AST-identical to main, runtime R/ unchang
 Validation-only commit `77e3a14` differs solely by a caller workflow, invokes the exact
 production workflow and the unchanged serial Linux CRAN-mode job. Run:
 https://github.com/Exynos-8890/gptr/actions/runs/39002733279 (live; no time-target claim yet).
+
+Round 2 complete (`39002125559`): all eight checks passed. Release critical path
+18m32s, oldrel-4 20m58s, including setup and full check. Artifact audits prove each
+version's 190 ordinary + 10 fresh native files, 31766 + 1906 passes and 107 + 1 skips.
+
+Production attempt `39002733279`: release all passed; oldrel tests had no errors but
+all checks warned about missing qpdf. Aggregate required contexts correctly failed.
+Small install probes did not cover PDF checks. No warning or PDF check was suppressed.
+The hosted image already has qpdf in Rtools45; explicit R_QPDF avoids the extra Rtools42
+installation while retaining the real PDF checker. Old R/PDF probe `39004339771`
+passed; its predecessor had only an unsupported verbose argument in the probe itself.
+
+Clean branch now `1113a59` (46 local regressions). Full qpdf-fixed run:
+https://github.com/Exynos-8890/gptr/actions/runs/39004439821 at `ee38b22` (live).
+Validation differs from the clean branch only by two excluded caller/probe workflows.
+R/, tests/, DESCRIPTION, NAMESPACE, inst/, man/ and vignettes/ are unchanged from
+the still-live original CRAN-mode run `39002733279`; do not repeat its cold compilation.
