@@ -16,6 +16,7 @@ test_that("Rtools setup comparison keeps the same source-install regression file
   sys.source(testthat::test_path("sample-plan.R"), envir = scope)
   expect_identical(scope$sample_plan("install-default"), "test-aaa-state.R")
   expect_identical(scope$sample_plan("install-no-rtools"), "test-aaa-state.R")
+  expect_identical(scope$sample_plan("install-no-rtools-cold"), "test-aaa-state.R")
 })
 
 test_that("staged tests see original sources rather than the installed binary", {

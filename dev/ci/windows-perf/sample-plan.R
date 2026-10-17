@@ -6,7 +6,7 @@ sample_plan = function(arm) {
   )
   names = switch(arm, serial = , parallel2 = unlist(groups, use.names = FALSE),
     shard1 = groups[[1L]], shard2 = groups[[2L]],
-    `install-default` = , `install-no-rtools` = "aaa-state",
+    `install-default` = , `install-no-rtools` = , `install-no-rtools-cold` = "aaa-state",
     stop("Unknown sample arm: ", arm))
   sort(paste0("test-", names, ".R"))
 }

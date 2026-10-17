@@ -3,8 +3,7 @@ name: Windows oldrel Rtools setup experiment
   push:
     branches: perf/windows-ci-experiments
     paths:
-      - .github/workflows/windows-performance-setup.yaml
-      - dev/ci/windows-perf/sample-plan.R
+      - dev/ci/windows-perf/setup-trigger.txt
 permissions:
   contents: read
 concurrency:
