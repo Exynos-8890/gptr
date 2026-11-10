@@ -1,6 +1,7 @@
 # agent-dispatch.R -- the tool dispatcher and the permission kernel (P06, layer L2).
-# Per call: lookup, validate, tool_call hooks, perm_check(), checkpointers, execute, tool_result
-# hooks; never throws (INFRA-10). An interrupted call is recorded with on.exit(), never an exiting
+# R calls use tool_call hooks and execute directly in this experiment; other calls are validated,
+# gated and checkpointed. The dispatcher never throws (INFRA-10). An interrupted call is recorded
+# with on.exit(), never an exiting
 # tryCatch(interrupt =), which would pre-empt the pause menu (G3).
 
 perm_decisions = c("allow", "modify", "ask", "ask_human", "deny")
@@ -72,9 +73,8 @@ dispatch_one = function(run, call, st = NULL) {
   })
 }
 
-#' The pipeline of one call: lookup, validation, tool_call hooks, perm_check(), checkpointers,
-#' execution, tool_result hooks; a run aborted while the call is prepared ends it unrun. A call
-#' refused (a hook's block, a denial, the abort) leaves why in `st$refused` (dispatch_finish()).
+#' Run R through its tool_call hook and execute it directly for this experiment. Other tools use
+#' validation, permissions, checkpoints and tool_result hooks. A refused call records why in `st`.
 #' @noRd
 dispatch_steps = function(run, call, st = NULL) {
   refuse = function(why, text) {
@@ -87,6 +87,15 @@ dispatch_steps = function(run, call, st = NULL) {
   }
   ctx = run_ctx(run)
   if (is.null(call$tool)) return(tool_error(paste0("Tool ", call$name, " not found")))
+  if (identical(call$name, "r")) {
+    call = tool_call_hook(run, call)
+    if (!is.null(call$blocked)) return(refuse(call$refused, call$blocked))
+    if (isTRUE(run$signal$aborted)) return(aborted())
+    res = tool_execute_frame(run, call, ctx, st)
+    nested = run$nested[[call$id]]
+    if (length(nested)) res$details$nested = nested
+    return(res)
+  }
   v = tool_validate(tool_frozen(run, call$tool), call$input)
   if (!isTRUE(v$ok)) {
     return(tool_error(paste0("Invalid arguments for ", call$name, ": ",
@@ -115,9 +124,10 @@ dispatch_steps = function(run, call, st = NULL) {
 #' The `tool_call` hook chain of a call: the call with a `modify` decision's input, or with
 #' `blocked` (the denial text) and `refused` (why it did not run) when a hook blocks it
 #' @noRd
-tool_call_hook = function(run, call, risk = NULL) {
-  hk = run_emit(run, "tool_call", tool_name = call$name, tool_call_id = call$id, input = call$input,
-                nested = call$nested, parent_tool_call_id = call$parent_id, risk = risk)
+tool_call_hook = function(run, call, risk = NULL, session = run$shell) {
+  hk = session_emit(session, "tool_call", tool_name = call$name, tool_call_id = call$id,
+                    input = call$input, nested = call$nested, parent_tool_call_id = call$parent_id,
+                    risk = risk, .run = run)
   if (!is.list(hk)) return(call)
   if (identical(hk$decision, "block")) {
     why = hk$reason %||% "a tool_call hook blocked it"

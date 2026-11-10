@@ -1,7 +1,7 @@
 # gptr as an MCP server for the live session (contract 6.3, 7.18; architecture 6.14; IC-57,
-# IC-58, IC-65, IC-79): one JSON-RPC dispatcher (both eras) over the session's tools, gated like
-# any tool call. The claude CLI's in-process "sdk" transport and the codex route's stdio relay
-# reach it through P20's opts$mcp_dispatch (the mcp.dispatch_local service, their single gate).
+# IC-58, IC-65, IC-79): one JSON-RPC dispatcher (both eras) over the session's tools. This
+# experiment runs served R directly; other tools keep their gate. The claude CLI's in-process
+# "sdk" transport and the codex route's stdio relay use P20's opts$mcp_dispatch.
 # Adapted from dev/research/07-anthropic-api-claude-plan.md 5.5-5.6 (the transport-agnostic
 # dispatcher, verified live) and dev/research/16-mcp-skills-plugins.md 5.9 (dual-era answers).
 
@@ -12,7 +12,8 @@ mcp_default_tools = function() c("r", "read", "edit", "write")
 #' The server's instructions
 #' @noRd
 mcp_server_instructions = paste("Tools run inside the user's live R session; objects persist.",
-                                "Every call passes the user's permission settings.")
+                                "R calls use tool-call hooks but bypass permissions and",
+                                "checkpoints; other tools use the user's permission settings.")
 
 #' The schema of the served `r` tool: no person watches an MCP caller, so it offers the
 #' best-effort timeout (IC-68)
@@ -225,22 +226,39 @@ mcp_serve_call = function(target, name, args, id, schema) {
   st$res
 }
 
-#' Run one served tool call, validated against its served `schema`, through the tool_call hooks of
-#' a live run (IC-79) and mcp_serve_gate(); returns a gptr_tool_result. A tool other than `r` runs
-#' as the agent loop runs it (tool_run(): its record's source, the result check), a reported one
-#' (`st`, which marks the start of its execution) in the run's tool frame (tool_execute_frame()).
-#' A reported call runs between the checkpointers' before and after, as dispatch_steps() runs one.
-#' Its child waits cannot reenter later callbacks or sibling tools, even when entered at idle.
+#' Run served R through its tool_call hook, without permissions or checkpoints, for this experiment.
+#' Other tools retain validation, hooks and permissions, and run in the tool frame when reported.
 #' @noRd
 mcp_serve_exec = function(target, name, args, id, schema, st = NULL) {
   s = target$session
   live = session_live(s)
   if (is.null(live)) return(gptr_tool_result("This session is not live.", is_error = TRUE))
+  run = live$run
+  ctx = live$ctx
+  if (identical(name, "r")) {
+    env = mcp_serve_envir(target, run, ctx$mode())
+    if (!is.environment(env)) {
+      return(gptr_tool_result("This session has no environment to evaluate R code in.",
+                              is_error = TRUE))
+    }
+    call = list(id = paste0("mcp_", id), name = name, input = args, nested = FALSE, envir = env)
+    call = tool_call_hook(run, call, session = s)
+    if (!is.null(call$blocked)) {
+      if (!is.null(st)) st$refused = call$refused
+      return(gptr_tool_result(call$blocked, is_error = TRUE))
+    }
+    if (!is.null(st)) st$t0 = reactor_now()
+    reactor = reactor_get()
+    reactor$tool_depth = reactor$tool_depth + 1L
+    on.exit({
+      reactor$tool_depth = reactor$tool_depth - 1L
+    }, add = TRUE)
+    return(mcp_serve_r(call, env, run, s, ctx))
+  }
   if (isTRUE(live$compacting)) {
     return(gptr_tool_result("Tools are not available during conversation compaction.",
                             is_error = TRUE))
   }
-  run = live$run
   # a run blocked on an approval nobody can give acts no further (08 section 3.7): a CLI's turn
   # would otherwise go on calling tools until it ends
   if (!is.null(run$blocked)) {
@@ -249,7 +267,6 @@ mcp_serve_exec = function(target, name, args, id, schema, st = NULL) {
                                    "` needs approval and nobody can give it in this run; no ",
                                    "further tool call runs."), is_error = TRUE))
   }
-  ctx = live$ctx
   sid = session_data(s)$id
   spec = registry_get("tool", name, session = sid)
   if (is.null(spec) || !is.function(spec$execute)) {
@@ -262,15 +279,7 @@ mcp_serve_exec = function(target, name, args, id, schema, st = NULL) {
   }
   input = v$input
   env = mcp_serve_envir(target, run, ctx$mode())
-  if (identical(name, "r") && !is.environment(env)) {
-    return(gptr_tool_result("This session has no environment to evaluate R code in.",
-                            is_error = TRUE))
-  }
-  risk = if (identical(name, "r")) {
-    ext_service_get("risk.classify")(input$code, envir = env, root = project_root(), kind = "r")
-  } else if (is.function(spec$risk)) {
-    spec$risk(input, ctx)
-  }
+  risk = if (is.function(spec$risk)) spec$risk(input, ctx)
   call = list(id = paste0("mcp_", id), name = name, input = input, tool = spec, nested = FALSE,
               risk = risk, envir = env)
   if (!is.null(run)) call = tool_call_hook(run, call, risk)
@@ -295,10 +304,7 @@ mcp_serve_exec = function(target, name, args, id, schema, st = NULL) {
   on.exit({
     reactor$tool_depth = reactor$tool_depth - 1L
   }, add = TRUE)
-  res = if (identical(name, "r")) {
-    call$approved_level = as.integer((d$risk %||% call$risk)$level %||% 2L)
-    mcp_serve_r(call, env, run, s, ctx)
-  } else if (is.null(st)) {
+  res = if (is.null(st)) {
     tool_run(spec, call$input, ctx, name)
   } else {
     tool_execute_frame(run, call, ctx)
@@ -658,10 +664,12 @@ mcp_handle_new = function(st, tok, stop) {
 #'
 #' Starts an MCP server inside this R session that offers `r`, `read`, `edit` and `write` to
 #' agents such as Codex, Claude Code, Claude Desktop or Cursor. It listens only on 127.0.0.1,
-#' requires a 192-bit bearer token, rejects foreign browser origins, and runs every call through
-#' your permission settings; R code evaluates in `envir`, where its objects persist. The calls
-#' belong to a dedicated gptr session whose permission mode is the configured default when the
-#' server starts, independently of a chat's explicit mode; like any new session, it becomes
+#' requires a 192-bit bearer token and rejects foreign browser origins. In this experimental
+#' branch, served `r` calls run tool-call hooks without a risk assessment and bypass permissions
+#' and checkpoints. Other served tools use your permission settings. R code evaluates in `envir`,
+#' where its objects persist.
+#' The calls belong to a dedicated gptr session whose permission mode is the configured default
+#' when the server starts, independently of a chat's explicit mode; like any new session, it becomes
 #' [gptr_last()]. A running server keeps its original workspace and mode until stopped.
 #' Requests are answered at R's top-level idle prompt or during an outermost gptr wait. Serving
 #' pauses while Peter's own prompt waits (in every console), while other R code runs and during a
@@ -672,9 +680,9 @@ mcp_handle_new = function(st, tok, stop) {
 #' In Peter, `/mcp serve` starts or reuses the server and returns to R's prompt; a new server
 #' uses that chat's workspace and mode. Resume the chat with `gptr_last() |> peter()`. Calls that
 #' need approval are refused with a note on what a person can do, because gptr never asks from a
-#' background callback. In plan mode, `r` calls that only read run in a scratch environment above
-#' the workspace (what they create is not kept) and every call that changes something is
-#' refused. The token appears only in the snippets of `$config`, which show it
+#' background callback. In plan mode, `r` calls use a scratch environment above the workspace, but
+#' their file writes are not blocked by the permission gate on this experimental branch. The token
+#' appears only in the snippets of `$config`, which show it
 #' redacted, in notebooks and documents too (`as.character()` gives the text to paste;
 #' `$config$codex` holds the `codex` options in `$args` and the environment to start Codex with
 #' in `$env`). One server runs per R process. Needs 'httpuv', 'later' and 'openssl'; gptr's own

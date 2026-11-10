@@ -1671,11 +1671,15 @@ gptr_init = function(path, instructions = TRUE, gitignore = TRUE) {
 #' a gptr function (for example `to` in [gptr_export()] or `paths` in [gptr_scrub()] with
 #' `dry_run = FALSE`), inside the project's `.gptr/` directory once it exists (see
 #' [gptr_init()]), inside `tools::R_user_dir("gptr")`, inside the session temporary directory,
-#' into files you bound with [gptr_doc()] or confirmed, and by tool calls that the permission
-#' mode allowed.
+#' into files you bound with [gptr_doc()] or confirmed, and by tool calls.
 #'
 #' @section Permission modes:
-#' Every tool call passes a permission gate. The default mode is `manual`: actions that the
+#' On this experimental branch, `r` calls bypass outer input validation, risk classification,
+#' permissions and checkpoints on both direct and MCP routes. The `tool_call` hook still runs,
+#' with `risk = NULL`; direct `r` calls skip `tool_result` hooks. Nested tools and the evaluator
+#' retain their own checks. Statements below about the permission gate do not apply to outer `r`
+#' calls. The following permission modes apply to other tool calls. The default mode is `manual`:
+#' actions that the
 #' static classifier labels read-only run without asking; every other action it recognizes,
 #' including a change to a file or an object, asks first with a one-line prompt. The classifier
 #' is advisory, not a security boundary (see below). `edits` also allows file edits inside the
@@ -1702,9 +1706,9 @@ gptr_init = function(path, instructions = TRUE, gitignore = TRUE) {
 #' question (Rscript, knitr, a scheduled job) the run stops with status `blocked` and a
 #' `gptr_error_permission` condition that says how to allow the action, unless you set
 #' `options(gptr.noninteractive_ask = "deny")`. Model code cannot switch the gate
-#' off or loosen it during a run: the safety options are copied when the run starts. Only the option
-#' `gptr.unsafe_no_permissions`, set by you outside a run, removes the gate, and it is meant for
-#' disposable sandboxes.
+#' off or loosen it during a run: the safety options are copied when the run starts. Apart from
+#' the experimental `r` paths, only `gptr.unsafe_no_permissions`, set by you outside a run, removes
+#' the gate; it is meant for disposable sandboxes.
 #'
 #' Changing gptr's own configuration includes model code that sets or unsets an environment
 #' variable gptr reads as configuration: a key or base-URL variable of a provider gptr has

@@ -27,10 +27,12 @@ calling again returns the running handle; with \code{stop = TRUE}, \code{invisib
 \description{
 Starts an MCP server inside this R session that offers \code{r}, \code{read}, \code{edit} and \code{write} to
 agents such as Codex, Claude Code, Claude Desktop or Cursor. It listens only on 127.0.0.1,
-requires a 192-bit bearer token, rejects foreign browser origins, and runs every call through
-your permission settings; R code evaluates in \code{envir}, where its objects persist. The calls
-belong to a dedicated gptr session whose permission mode is the configured default when the
-server starts, independently of a chat's explicit mode; like any new session, it becomes
+requires a 192-bit bearer token and rejects foreign browser origins. In this experimental
+branch, served \code{r} calls run tool-call hooks without a risk assessment and bypass permissions
+and checkpoints. Other served tools use your permission settings. R code evaluates in \code{envir},
+where its objects persist.
+The calls belong to a dedicated gptr session whose permission mode is the configured default
+when the server starts, independently of a chat's explicit mode; like any new session, it becomes
 \code{\link[=gptr_last]{gptr_last()}}. A running server keeps its original workspace and mode until stopped.
 Requests are answered at R's top-level idle prompt or during an outermost gptr wait. Serving
 pauses while Peter's own prompt waits (in every console), while other R code runs and during a
@@ -41,9 +43,9 @@ interactive R console instead.
 In Peter, \verb{/mcp serve} starts or reuses the server and returns to R's prompt; a new server
 uses that chat's workspace and mode. Resume the chat with \code{gptr_last() |> peter()}. Calls that
 need approval are refused with a note on what a person can do, because gptr never asks from a
-background callback. In plan mode, \code{r} calls that only read run in a scratch environment above
-the workspace (what they create is not kept) and every call that changes something is
-refused. The token appears only in the snippets of \verb{$config}, which show it
+background callback. In plan mode, \code{r} calls use a scratch environment above the workspace, but
+their file writes are not blocked by the permission gate on this experimental branch. The token
+appears only in the snippets of \verb{$config}, which show it
 redacted, in notebooks and documents too (\code{as.character()} gives the text to paste;
 \verb{$config$codex} holds the \code{codex} options in \verb{$args} and the environment to start Codex with
 in \verb{$env}). One server runs per R process. Needs 'httpuv', 'later' and 'openssl'; gptr's own
